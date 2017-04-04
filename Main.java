@@ -1,96 +1,178 @@
 import java.util.Scanner;
 import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Main {
 
-    public static int map[][];
-    public static int dp[][];
-    public static int aux[][];
-    public static int n;
-    public static int routes;
+	public static void main(String[] args) {
 
-	public static void main(String args[]) {
+		Scanner scan;
+		int n;
+		int[][] d;
 
-    	int i,j;
-
-    	Scanner scan = new Scanner(System.in);
+		scan = new Scanner(System.in);
 		String linha = "";
 
 		linha = scan.nextLine();
 
-		n = Integer.parseInt(linha);
-        if (n == 0) return;
+		n = Integer.parseInt(linha.split("\\s+")[0]);
 
-        routes = (int) java.lang.Math.pow(2,n);
-        
+        int rotas = 1<<n;
 
-        dp = new int[n][];
-        aux = new int[n][];
-        map = new int[n][];
+        d = new int[n][];
 
-        for(i = 0; i < n; i++) {
-        	dp[i] = new int[routes];
-            aux[i] = new int[routes];
-        }
+       	for(int i = 0; i < n; i++) {
 
-        for(i = 0; i < n; i++) {
-            map[i] = new int[n];
-        }   
-
-        for(i = 0; i < n; i++) {
             linha = scan.nextLine();
-       		for(j = 0; j < n; j++) {
-       			map[i][j] = Integer.parseInt(linha.split("\\s+")[j]);
+       		d[i] = new int[n];
+
+       		for(int j = 0; j < n; j++) {
+       			d[i][j] = Integer.parseInt(linha.split("\\s+")[j]);
        		}
+
        	}
+       	scan.close();
+        Arvore arvore = new Arvore();
+        No[] listNo = new No[1];
 
-        for(i = 0;i < n; i++){
-            for(j = 0; j < routes; j++) {
-                dp[i][j] = aux[i][j] = -1; 
-            }
-        }
-        for(i=0; i < n; i++){
-            dp[i][0] = map[i][0];
-        }
-        int result = compute(0,routes-2);
-        System.out.println("Valor: " + result);
-        System.out.print("Circuito: 0");
-        getpath(0, routes-2);
-        System.out.println(" - 0");   	
-	}
+        No[] listAux = null;
+        int indiceAux = 0;
 
-    public static void getpath(int start,int set)
-    {
-        if(aux[start][set] == -1) return;
+        No primeiro = new No(0, (1<<n)-2);
 
-        int x = aux[start][set];
-        int mask = (routes -1 ) - ( 1 << x );
-        int masked = set & mask;
+        arvore.inserir(primeiro, null);
+        listNo[0] = primeiro;
+        int m = 1;
 
-        System.out.print(" - " + x + "");
-        getpath(x, masked);
-    }
+        for(int s = n-1; s > 1; --s) {
 
-    public static int compute(int start,int set)
-    {   
-        int masked, mask, temp, i;
-        int result = Integer.MAX_VALUE;
+	       	int aux = m*s;
+	       	listAux = new No[aux];
+            indiceAux = 0;
 
-        if(dp[start][set]!=-1) return dp[start][set];
-    
-        for(i=0;i<n;i++)
-        {   
-            mask = (routes-1)-(1<<i);
-            masked = set & mask;
-            if(masked!=set)
-            {   
-                temp = map[start][i] + compute(i, masked);
-                if(temp < result) {
-                    aux[start][set] = i;
-                    result = temp;
+            for(int k = 0; k < m; k++) {
+
+                for(int i = 1; i < n; i++) {
+                	
+                    if( (listNo[k].s & (1 << i)) == (1 << i)) {
+                        No novoNo = new No(i, listNo[k].s ^ (1 << i));
+                        arvore.inserir(novoNo, listNo[k]);
+                        listAux[indiceAux] = novoNo;
+                        indiceAux++;
+                    }
                 }
             }
+            m = aux;
+            listNo = new No[aux];
+            listNo = Arrays.copyOf(listAux, listAux.length);
+        } 
+
+
+        listAux = new No[listNo.length];
+        indiceAux = 0;
+        for(int k = 0; k < listNo.length; k++) {
+        	for(int i = 1; i < n; i++) {
+        		if( (listNo[k].s & (1 << i)) == (1 << i)) {
+
+                    No novoNo = new No(i, 0);
+                    arvore.inserir(novoNo, listNo[k]);
+                    listAux[indiceAux] = novoNo;
+                    indiceAux++;
+                }
+        	} 
         }
-        return dp[start][set] = result;
+
+        listNo = listAux;
+        m = listNo.length;
+        indiceAux = 0;
+        
+        for(int s = 0; s < n-1; s++) {
+        	int aux = m/(s+1);
+        	listAux = new No[aux];
+        	indiceAux = 0; 
+        	for(int k = 0; k < m; k++) {
+        		if(s == 0) {
+        			listNo[k].min(d[listNo[k].i][0], "1 - ");
+
+        		}
+        		int ant = listNo[k].antecessor.i;
+        		int dij = d[ant][listNo[k].i];
+        		int indice = listNo[k].i;
+        		listNo[k].antecessor.min(dij + listNo[k].valor, "" + listNo[k].caminho + "" + (listNo[k].i+1) + " - ");
+        		if(k != 0) {
+        			if(listNo[k].antecessor != listNo[k-1].antecessor) {
+        				listAux[indiceAux] = listNo[k].antecessor;
+        				indiceAux++;
+        			}
+        		}
+        		else {
+        			listAux[indiceAux] = listNo[k].antecessor;
+        			indiceAux++;
+        		}
+        	}
+
+        	m = aux;
+        	listNo = listAux;
+        }
+
+        System.out.println("Valor: " + arvore.primeiro.valor);
+        System.out.println("Caminho: " + arvore.primeiro.caminho + "1");
+	}
+
+    public static int fatorial(int n){
+
+        int fat = 1;
+
+        for(int i = 1; i <= n; i++) {
+            fat *= i;
+        }
+        return fat;
+    }
+
+}
+
+class Arvore {
+    public No primeiro;
+
+    public Arvore() {
+        primeiro = null;
+    }
+
+    public void inserir(No novoNo, No pai) {
+
+        if(primeiro == null) {
+            primeiro = novoNo;
+        }
+
+        novoNo.antecessor = pai;
+        if(pai != null) {
+        	pai.sucessor = novoNo;
+        }
     }
 }
+
+class No {
+    public int i;
+    public int s;
+    public No antecessor;
+    public No sucessor;
+    public int valor;
+    public String caminho;
+
+    public No(int i, int s) {
+        this.i = i;
+        this.s = s;
+        valor = Integer.MAX_VALUE;
+        caminho = "";
+    }
+
+    public void min(int d, String i) {
+    	if( d < valor ) {
+    		valor = d;
+    		caminho = i;
+    	}
+    }
+}
+
+
