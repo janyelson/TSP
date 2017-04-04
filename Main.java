@@ -93,13 +93,13 @@ public class Main {
         	indiceAux = 0; 
         	for(int k = 0; k < m; k++) {
         		if(s == 0) {
-        			listNo[k].min(d[listNo[k].i][0], "1 - ");
+        			listNo[k].min(d[listNo[k].i][0], " - 1 ");
 
         		}
         		int ant = listNo[k].antecessor.i;
         		int dij = d[ant][listNo[k].i];
         		int indice = listNo[k].i;
-        		listNo[k].antecessor.min(dij + listNo[k].valor, "" + listNo[k].caminho + "" + (listNo[k].i+1) + " - ");
+        		listNo[k].antecessor.min(dij + listNo[k].valor, " - " + (listNo[k].i+1) + "" + listNo[k].caminho);
         		if(k != 0) {
         			if(listNo[k].antecessor != listNo[k-1].antecessor) {
         				listAux[indiceAux] = listNo[k].antecessor;
@@ -117,7 +117,8 @@ public class Main {
         }
 
         System.out.println("Valor: " + arvore.primeiro.valor);
-        System.out.println("Caminho: " + arvore.primeiro.caminho + "1");
+
+        System.out.println("Caminho: 1" + arvore.primeiro.caminho);
 	}
 
     public static int fatorial(int n){
